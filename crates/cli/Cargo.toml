@@ -1,0 +1,21 @@
+[package]
+name = "strikecut"
+description = "Edit video by editing text. Local, open-source, single binary."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "strikecut"
+path = "src/main.rs"
+
+[features]
+default = []
+whisper = ["strikecut-core/whisper"]
+
+[dependencies]
+strikecut-core.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+serde_json.workspace = true

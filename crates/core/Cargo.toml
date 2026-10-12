@@ -1,0 +1,20 @@
+[package]
+name = "strikecut-core"
+description = "Text-based audio/video editing engine: transcripts, cut lists, and ffmpeg export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+# Embedded whisper.cpp transcription. Requires CMake and a C/C++ toolchain (plus libclang) at build time.
+whisper = ["dep:whisper-rs"]
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+whisper-rs = { workspace = true, optional = true }

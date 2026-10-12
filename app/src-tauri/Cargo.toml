@@ -1,0 +1,22 @@
+[package]
+name = "strikecut-app"
+description = "Strikecut desktop app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+whisper = ["strikecut-core/whisper"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.2", features = [] }
+
+[dependencies]
+strikecut-core.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2.12.3", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2.8.2"

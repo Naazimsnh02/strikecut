@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strikecut</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="brand"><span class="logo">S</span><span>Strike<s>cut</s></span></div>
+      <button id="open" class="primary">Open…</button>
+      <div class="sep"></div>
+      <button id="fillers" disabled title="Delete um, uh, hmm… everywhere">Remove fillers</button>
+      <label class="pauses" title="Shorten long silences">
+        Pauses
+        <select id="pauses" disabled>
+          <option value="">Keep</option>
+          <option value="1.0">Max 1.0s</option>
+          <option value="0.6">Max 0.6s</option>
+          <option value="0.3">Max 0.3s</option>
+        </select>
+      </label>
+      <button id="undo" disabled title="Undo (Ctrl+Z)">Undo</button>
+      <div class="spacer"></div>
+      <span id="length" class="length"></span>
+      <label class="srt" title="Also write captions (.srt) next to the export"><input id="srt" type="checkbox" /> Captions</label>
+      <button id="export" class="primary" disabled>Export…</button>
+    </header>
+
+    <main id="workspace" class="workspace hidden">
+      <section class="player">
+        <video id="video" preload="auto"></video>
+        <div class="controls">
+          <button id="play" title="Play/pause (Space)">▶</button>
+          <span id="clock" class="clock">0:00</span>
+          <label class="preview"><input id="preview" type="checkbox" checked /> Preview edit</label>
+        </div>
+        <p class="hint">
+          Select words and press <kbd>Delete</kbd> to cut them. Press it again to restore.
+          Click a word to jump there. <kbd>Space</kbd> plays, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes.
+        </p>
+      </section>
+      <section id="transcript" class="transcript" tabindex="0"></section>
+    </main>
+
+    <section id="empty" class="empty">
+      <h1>Edit video by editing text.</h1>
+      <p>Open a video or audio file. Strikecut transcribes it on your machine, then you delete words to cut them.</p>
+      <button id="open-empty" class="primary big">Open a recording…</button>
+      <p class="muted">Nothing is uploaded. No account. No subscription.</p>
+    </section>
+
+    <div id="busy" class="busy hidden">
+      <div class="busy-card">
+        <div class="spinner"></div>
+        <p id="busy-text">Working…</p>
+        <progress id="busy-progress" max="1" class="hidden"></progress>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

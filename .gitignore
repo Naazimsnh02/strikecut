@@ -1,0 +1,6 @@
+/target
+node_modules/
+app/dist/
+app/src-tauri/gen/
+*.strikecut.json.tmp
+.DS_Store
