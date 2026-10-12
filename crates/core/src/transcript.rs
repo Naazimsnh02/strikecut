@@ -15,13 +15,7 @@ pub struct Word {
 
 impl Word {
     pub fn new(text: impl Into<String>, start: f64, end: f64) -> Self {
-        Self {
-            text: text.into(),
-            start,
-            end,
-            speaker: None,
-            deleted: false,
-        }
+        Self { text: text.into(), start, end, speaker: None, deleted: false }
     }
 
     /// Lowercased text with surrounding punctuation removed, for matching.
@@ -31,9 +25,7 @@ impl Word {
 }
 
 pub(crate) fn normalize(s: &str) -> String {
-    s.trim()
-        .trim_matches(|c: char| !c.is_alphanumeric() && c != '\'')
-        .to_lowercase()
+    s.trim().trim_matches(|c: char| !c.is_alphanumeric() && c != '\'').to_lowercase()
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -45,10 +37,7 @@ pub struct Transcript {
 
 impl Transcript {
     pub fn new(words: Vec<Word>) -> Self {
-        Self {
-            language: None,
-            words,
-        }
+        Self { language: None, words }
     }
 
     /// Plain text of the words that survive the edit.
@@ -75,8 +64,7 @@ impl Transcript {
     /// Fix ordering and overlaps that transcription engines occasionally produce.
     pub fn sanitize(&mut self) {
         self.words.retain(|w| !w.text.trim().is_empty() && w.end >= w.start);
-        self.words
-            .sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap_or(std::cmp::Ordering::Equal));
+        self.words.sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap_or(std::cmp::Ordering::Equal));
         for i in 1..self.words.len() {
             let prev_end = self.words[i - 1].end;
             let w = &mut self.words[i];
@@ -103,10 +91,7 @@ mod tests {
             words
                 .iter()
                 .enumerate()
-                .map(|(i, (s, d))| Word {
-                    deleted: *d,
-                    ..Word::new(*s, i as f64, i as f64 + 0.5)
-                })
+                .map(|(i, (s, d))| Word { deleted: *d, ..Word::new(*s, i as f64, i as f64 + 0.5) })
                 .collect(),
         )
     }
@@ -126,7 +111,8 @@ mod tests {
 
     #[test]
     fn sanitize_orders_and_clamps() {
-        let mut tr = Transcript::new(vec![Word::new("b", 1.0, 2.0), Word::new("a", 0.0, 1.5), Word::new(" ", 3.0, 4.0)]);
+        let mut tr =
+            Transcript::new(vec![Word::new("b", 1.0, 2.0), Word::new("a", 0.0, 1.5), Word::new(" ", 3.0, 4.0)]);
         tr.sanitize();
         assert_eq!(tr.words.len(), 2);
         assert_eq!(tr.words[0].text, "a");

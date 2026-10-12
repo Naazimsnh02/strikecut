@@ -174,7 +174,8 @@ struct Target {
 }
 
 fn parse_range(s: &str) -> Result<(usize, usize), String> {
-    let parse = |x: &str| x.trim().parse::<usize>().map_err(|_| format!("`{s}` is not a word index or range like 12-30"));
+    let parse =
+        |x: &str| x.trim().parse::<usize>().map_err(|_| format!("`{s}` is not a word index or range like 12-30"));
     match s.split_once(['-', ':']) {
         Some((a, b)) => Ok((parse(a)?, parse(b)?)),
         None => parse(s).map(|i| (i, i)),
@@ -256,7 +257,9 @@ fn run(cli: Cli) -> Result<()> {
         Cmd::Delete { project, target } => edit(&project, |p| {
             Ok(match target {
                 Target { range: Some((a, b)), .. } => format!("Deleted {} words", p.set_deleted(a, b, true)?),
-                Target { phrase: Some(ph), .. } => format!("Deleted {} occurrence(s) of \"{ph}\"", p.delete_phrase(&ph)),
+                Target { phrase: Some(ph), .. } => {
+                    format!("Deleted {} occurrence(s) of \"{ph}\"", p.delete_phrase(&ph))
+                }
                 _ => format!("Deleted {} filler words", mark_fillers(&mut p.transcript, DEFAULT_FILLERS)),
             })
         }),
@@ -293,8 +296,8 @@ fn run(cli: Cli) -> Result<()> {
             Ok(())
         }
         Cmd::Model(ModelCmd::Download { name }) => {
-            let m = models::find(&name)
-                .with_context(|| format!("unknown model `{name}` (see `strikecut model list`)"))?;
+            let m =
+                models::find(&name).with_context(|| format!("unknown model `{name}` (see `strikecut model list`)"))?;
             if m.is_installed() {
                 eprintln!("{} is already installed", m.name);
             }

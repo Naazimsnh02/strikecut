@@ -13,10 +13,7 @@ pub struct CaptionOptions {
 
 impl Default for CaptionOptions {
     fn default() -> Self {
-        Self {
-            max_words: 7,
-            max_seconds: 3.0,
-        }
+        Self { max_words: 7, max_seconds: 3.0 }
     }
 }
 
@@ -89,10 +86,7 @@ mod tests {
         words[1].deleted = true;
         let spans = [Span { start: 0.0, end: 1.0 }, Span { start: 1.9, end: 3.6 }];
         let srt = to_srt(&words, &spans, &CaptionOptions::default());
-        assert_eq!(
-            srt,
-            "1\n00:00:00,000 --> 00:00:01,600\nHello world.\n\n2\n00:00:02,100 --> 00:00:02,600\nBye.\n\n"
-        );
+        assert_eq!(srt, "1\n00:00:00,000 --> 00:00:01,600\nHello world.\n\n2\n00:00:02,100 --> 00:00:02,600\nBye.\n\n");
     }
 
     #[test]

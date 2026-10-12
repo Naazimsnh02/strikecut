@@ -21,10 +21,7 @@ pub struct AlignOptions {
 
 impl Default for AlignOptions {
     fn default() -> Self {
-        Self {
-            min_silence: 0.06,
-            max_shift: 0.5,
-        }
+        Self { min_silence: 0.06, max_shift: 0.5 }
     }
 }
 
@@ -102,9 +99,7 @@ pub fn snap_to_silences(words: &mut [Word], silences: &[(f64, f64)], max_shift: 
     // Greedy closest-first matching, keeping boundaries and silences in the same order.
     let mut assigned: Vec<(usize, usize)> = Vec::new();
     for (_, b, g) in candidates {
-        let consistent = assigned
-            .iter()
-            .all(|&(b2, g2)| b != b2 && g != g2 && (b < b2) == (g < g2));
+        let consistent = assigned.iter().all(|&(b2, g2)| b != b2 && g != g2 && (b < b2) == (g < g2));
         if consistent {
             assigned.push((b, g));
         }

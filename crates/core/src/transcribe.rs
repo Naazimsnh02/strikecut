@@ -199,7 +199,8 @@ mod embedded {
 pub fn import_json(path: &Path) -> Result<Transcript> {
     let text = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     let v: Value = serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
-    let mut t = parse_transcript_json(&v).with_context(|| format!("unrecognized transcript format in {}", path.display()))?;
+    let mut t =
+        parse_transcript_json(&v).with_context(|| format!("unrecognized transcript format in {}", path.display()))?;
     t.sanitize();
     if t.words.is_empty() {
         bail!("{} contains no timestamped words", path.display());
@@ -208,11 +209,8 @@ pub fn import_json(path: &Path) -> Result<Transcript> {
 }
 
 fn parse_transcript_json(v: &Value) -> Option<Transcript> {
-    let language = v
-        .pointer("/result/language")
-        .or_else(|| v.get("language"))
-        .and_then(Value::as_str)
-        .map(str::to_string);
+    let language =
+        v.pointer("/result/language").or_else(|| v.get("language")).and_then(Value::as_str).map(str::to_string);
 
     let words = if let Some(items) = v.get("transcription").and_then(Value::as_array) {
         whisper_cpp_words(items)
@@ -237,11 +235,9 @@ fn generic_word(w: &Value) -> Option<Word> {
     let start = w.get("start")?.as_f64()?;
     let end = w.get("end")?.as_f64()?;
     let mut word = Word::new(text, start, end);
-    word.speaker = w.get("speaker").and_then(|s| {
-        s.as_u64()
-            .map(|n| n as u32)
-            .or_else(|| s.as_str()?.trim_start_matches("SPEAKER_").parse().ok())
-    });
+    word.speaker = w
+        .get("speaker")
+        .and_then(|s| s.as_u64().map(|n| n as u32).or_else(|| s.as_str()?.trim_start_matches("SPEAKER_").parse().ok()));
     Some(word)
 }
 

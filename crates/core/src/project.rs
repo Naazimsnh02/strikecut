@@ -25,14 +25,7 @@ pub struct Project {
 
 impl Project {
     pub fn new(media: PathBuf, duration: f64, has_video: bool, transcript: Transcript) -> Self {
-        Self {
-            version: PROJECT_VERSION,
-            media,
-            duration,
-            has_video,
-            cut: CutOptions::default(),
-            transcript,
-        }
+        Self { version: PROJECT_VERSION, media, duration, has_video, cut: CutOptions::default(), transcript }
     }
 
     /// Default project location for a media file: `talk.mp4` -> `talk.mp4.strikecut.json`.
@@ -120,11 +113,7 @@ mod tests {
     use crate::transcript::Word;
 
     fn project(text: &str) -> Project {
-        let words = text
-            .split_whitespace()
-            .enumerate()
-            .map(|(i, s)| Word::new(s, i as f64, i as f64 + 0.8))
-            .collect();
+        let words = text.split_whitespace().enumerate().map(|(i, s)| Word::new(s, i as f64, i as f64 + 0.8)).collect();
         Project::new("talk.mp4".into(), 10.0, true, Transcript::new(words))
     }
 

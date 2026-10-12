@@ -21,10 +21,7 @@ pub struct ExportOptions {
 
 impl Default for ExportOptions {
     fn default() -> Self {
-        Self {
-            crf: 20,
-            preset: "medium".into(),
-        }
+        Self { crf: 20, preset: "medium".into() }
     }
 }
 
@@ -44,10 +41,8 @@ fn select_expr(spans: &[Span], shift: f64) -> String {
             }
         }
     }
-    let terms: Vec<String> = spans
-        .iter()
-        .map(|s| format!("gte(t,{:.6})*lt(t,{:.6})", s.start + shift, s.end + shift))
-        .collect();
+    let terms: Vec<String> =
+        spans.iter().map(|s| format!("gte(t,{:.6})*lt(t,{:.6})", s.start + shift, s.end + shift)).collect();
     sum(&terms)
 }
 
@@ -67,10 +62,7 @@ fn snap_to_frames(spans: &[Span], fps: f64) -> Vec<Span> {
     const EPS: f64 = 1e-6;
     let mut out: Vec<Span> = Vec::with_capacity(spans.len());
     for s in spans {
-        let snapped = Span {
-            start: (s.start * fps + EPS).floor() / fps,
-            end: (s.end * fps - EPS).ceil() / fps,
-        };
+        let snapped = Span { start: (s.start * fps + EPS).floor() / fps, end: (s.end * fps - EPS).ceil() / fps };
         match out.last_mut() {
             Some(last) if snapped.start <= last.end + EPS => last.end = last.end.max(snapped.end),
             _ if snapped.end > snapped.start => out.push(snapped),
@@ -124,16 +116,16 @@ pub fn export(
     cmd.args(["-y", "-v", "error", "-nostats", "-progress", "pipe:1", "-i"]).arg(input);
 
     // Long cut lists can exceed the OS command-line limit, so pass big graphs via a file.
-    let _graph_file;
-    if graph.len() > 8000 {
+    // The temp file must outlive the ffmpeg run, so keep it bound until the end of this function.
+    let _graph_file = if graph.len() > 8000 {
         let f = tempfile::Builder::new().suffix(".ffgraph").tempfile()?;
         std::fs::write(f.path(), &graph)?;
         cmd.arg("-/filter_complex").arg(f.path());
-        _graph_file = Some(f);
+        Some(f)
     } else {
         cmd.arg("-filter_complex").arg(&graph);
-        _graph_file = None;
-    }
+        None
+    };
 
     if fps.is_some() {
         cmd.args(["-map", "[outv]"]);
@@ -224,7 +216,11 @@ mod tests {
         let mut depth = 0i32;
         let mut max = 0;
         for c in expr.chars() {
-            depth += match c { '(' => 1, ')' => -1, _ => 0 };
+            depth += match c {
+                '(' => 1,
+                ')' => -1,
+                _ => 0,
+            };
             max = max.max(depth);
         }
         assert!(max < 20, "nesting depth {max}");

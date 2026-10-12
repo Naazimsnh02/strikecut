@@ -20,10 +20,8 @@ fn tool(name: &str) -> PathBuf {
         return PathBuf::from(p);
     }
     let file = format!("{name}{}", std::env::consts::EXE_SUFFIX);
-    if let Some(sibling) = std::env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent().map(|d| d.join(&file)))
-        .filter(|p| p.is_file())
+    if let Some(sibling) =
+        std::env::current_exe().ok().and_then(|exe| exe.parent().map(|d| d.join(&file))).filter(|p| p.is_file())
     {
         return sibling;
     }
@@ -54,9 +52,7 @@ pub fn command(program: impl AsRef<std::ffi::OsStr>) -> Command {
 /// Run a command, turning a non-zero exit into an error that includes the tail of stderr.
 pub fn run(cmd: &mut Command) -> Result<()> {
     let program = cmd.get_program().to_string_lossy().into_owned();
-    let out = cmd
-        .output()
-        .with_context(|| format!("failed to run `{program}`; is it installed and on PATH?"))?;
+    let out = cmd.output().with_context(|| format!("failed to run `{program}`; is it installed and on PATH?"))?;
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         let tail: Vec<&str> = stderr.lines().rev().take(15).collect();
@@ -90,7 +86,14 @@ pub fn probe(path: &Path) -> Result<MediaInfo> {
     }
 
     let out = command(ffprobe())
-        .args(["-v", "error", "-show_entries", "format=duration:stream=codec_type:stream_disposition=attached_pic", "-of", "json"])
+        .args([
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration:stream=codec_type:stream_disposition=attached_pic",
+            "-of",
+            "json",
+        ])
         .arg(path)
         .output()
         .context("failed to run ffprobe; is ffmpeg installed and on PATH?")?;
@@ -98,11 +101,7 @@ pub fn probe(path: &Path) -> Result<MediaInfo> {
         bail!("ffprobe could not read {}: {}", path.display(), String::from_utf8_lossy(&out.stderr).trim());
     }
     let p: Probe = serde_json::from_slice(&out.stdout).context("unexpected ffprobe output")?;
-    let duration = p
-        .format
-        .duration
-        .and_then(|d| d.parse::<f64>().ok())
-        .context("media has no duration")?;
+    let duration = p.format.duration.and_then(|d| d.parse::<f64>().ok()).context("media has no duration")?;
     Ok(MediaInfo {
         duration,
         // Cover art in audio files shows up as a video stream; ignore it.
@@ -125,10 +124,7 @@ pub fn read_pcm16_wav(path: &Path) -> Result<Vec<i16>> {
         let body = pos + 8;
         if id == b"data" {
             let end = body.saturating_add(len).min(bytes.len());
-            return Ok(bytes[body..end]
-                .chunks_exact(2)
-                .map(|b| i16::from_le_bytes([b[0], b[1]]))
-                .collect());
+            return Ok(bytes[body..end].chunks_exact(2).map(|b| i16::from_le_bytes([b[0], b[1]])).collect());
         }
         pos = body + len + (len & 1);
     }

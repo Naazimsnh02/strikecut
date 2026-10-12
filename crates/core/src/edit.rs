@@ -30,11 +30,7 @@ pub struct CutOptions {
 
 impl Default for CutOptions {
     fn default() -> Self {
-        Self {
-            padding: 0.06,
-            max_pause: None,
-            min_span: 0.03,
-        }
+        Self { padding: 0.06, max_pause: None, min_span: 0.03 }
     }
 }
 
@@ -48,11 +44,7 @@ impl Default for CutOptions {
 pub fn keep_spans(words: &[Word], duration: f64, opts: &CutOptions) -> Vec<Span> {
     let duration = duration.max(words.last().map_or(0.0, |w| w.end));
     if words.is_empty() {
-        return if duration > 0.0 {
-            vec![Span { start: 0.0, end: duration }]
-        } else {
-            vec![]
-        };
+        return if duration > 0.0 { vec![Span { start: 0.0, end: duration }] } else { vec![] };
     }
 
     let cap = opts.max_pause.unwrap_or(f64::INFINITY);
@@ -92,10 +84,7 @@ pub fn keep_spans(words: &[Word], duration: f64, opts: &CutOptions) -> Vec<Span>
             words[j].end + half.unwrap_or(0.0)
         };
 
-        spans.push(Span {
-            start: start.clamp(0.0, duration),
-            end: end.clamp(0.0, duration),
-        });
+        spans.push(Span { start: start.clamp(0.0, duration), end: end.clamp(0.0, duration) });
         i = j + 1;
     }
 
@@ -139,13 +128,7 @@ mod tests {
     use super::*;
 
     fn words(spec: &[(f64, f64, bool)]) -> Vec<Word> {
-        spec.iter()
-            .enumerate()
-            .map(|(i, &(s, e, d))| Word {
-                deleted: d,
-                ..Word::new(format!("w{i}"), s, e)
-            })
-            .collect()
+        spec.iter().enumerate().map(|(i, &(s, e, d))| Word { deleted: d, ..Word::new(format!("w{i}"), s, e) }).collect()
     }
 
     fn approx(spans: &[Span], expected: &[(f64, f64)]) {

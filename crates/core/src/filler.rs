@@ -3,9 +3,8 @@
 use crate::transcript::{normalize, Transcript};
 
 /// Single-word fillers that are almost never meaningful speech.
-pub const DEFAULT_FILLERS: &[&str] = &[
-    "um", "umm", "ummm", "uh", "uhh", "uhm", "uh-huh", "er", "erm", "ah", "ahh", "hmm", "hm", "mm", "mmm",
-];
+pub const DEFAULT_FILLERS: &[&str] =
+    &["um", "umm", "ummm", "uh", "uhh", "uhm", "uh-huh", "er", "erm", "ah", "ahh", "hmm", "hm", "mm", "mmm"];
 
 pub fn is_filler(text: &str, fillers: &[&str]) -> bool {
     let n = normalize(text);

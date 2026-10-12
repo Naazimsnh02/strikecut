@@ -20,10 +20,7 @@ fn err(e: impl std::fmt::Display) -> String {
 
 /// Run blocking work (ffmpeg, whisper) off the UI thread.
 async fn blocking<T: Send + 'static>(f: impl FnOnce() -> anyhow::Result<T> + Send + 'static) -> CmdResult<T> {
-    tauri::async_runtime::spawn_blocking(f)
-        .await
-        .map_err(err)?
-        .map_err(|e| format!("{e:#}"))
+    tauri::async_runtime::spawn_blocking(f).await.map_err(err)?.map_err(|e| format!("{e:#}"))
 }
 
 /// Let the webview stream this file through the asset protocol. Nothing else on disk is exposed.
@@ -80,11 +77,7 @@ fn open_media(app: AppHandle, media: PathBuf) -> CmdResult<Option<Project>> {
 async fn transcribe_media(media: PathBuf, model: Option<PathBuf>, language: Option<String>) -> CmdResult<Project> {
     blocking(move || {
         let info = media::probe(&media)?;
-        let opts = TranscribeOptions {
-            model: model.unwrap_or_else(default_model_path),
-            language,
-            threads: None,
-        };
+        let opts = TranscribeOptions { model: model.unwrap_or_else(default_model_path), language, threads: None };
         let t = transcribe(&media, &opts)?;
         let p = Project::new(media.clone(), info.duration, info.has_video, t);
         p.save(&Project::default_path(&media))?;
