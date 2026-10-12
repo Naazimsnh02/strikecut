@@ -9,7 +9,7 @@ use strikecut_core::export::{export, ExportOptions};
 use strikecut_core::filler::{mark_fillers, DEFAULT_FILLERS};
 use strikecut_core::srt::{to_srt, CaptionOptions};
 use strikecut_core::transcribe::{align_with_media, default_model_path, import_json, transcribe, TranscribeOptions};
-use strikecut_core::{media, Project, Span};
+use strikecut_core::{media, models, Project, Span};
 use tauri::{AppHandle, Emitter, Manager};
 
 type CmdResult<T> = Result<T, String>;
@@ -35,12 +35,32 @@ fn allow_media(app: &AppHandle, path: &Path) -> CmdResult<()> {
 struct ModelStatus {
     path: PathBuf,
     exists: bool,
+    /// Download size in bytes if the default model can be fetched automatically.
+    download_size: Option<u64>,
 }
 
 #[tauri::command]
 fn model_status() -> ModelStatus {
     let path = default_model_path();
-    ModelStatus { exists: path.is_file(), path }
+    let downloadable = (path == models::DEFAULT.path()).then_some(models::DEFAULT.size);
+    ModelStatus { exists: path.is_file(), path, download_size: downloadable }
+}
+
+/// Fetch the default speech model, emitting `model-progress` as `[done, total]` bytes.
+#[tauri::command]
+async fn download_model(app: AppHandle) -> CmdResult<PathBuf> {
+    blocking(move || {
+        models::DEFAULT.download(|done, total| {
+            let _ = app.emit("model-progress", (done, total));
+        })
+    })
+    .await
+}
+
+/// A media file passed on the command line (`strikecut-app talk.mp4`, or "Open with" from the file manager).
+#[tauri::command]
+fn startup_file() -> Option<PathBuf> {
+    std::env::args_os().skip(1).map(PathBuf::from).find(|p| p.is_file())
 }
 
 /// Open media. Returns the existing project if this file was edited before, otherwise `None` (needs a transcript).
@@ -132,6 +152,8 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             model_status,
+            download_model,
+            startup_file,
             open_media,
             transcribe_media,
             import_transcript,

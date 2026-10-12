@@ -15,7 +15,7 @@ type Project = {
 };
 type Span = { start: number; end: number };
 type Cut = { spans: Span[]; duration: number };
-type ModelStatus = { path: string; exists: boolean };
+type ModelStatus = { path: string; exists: boolean; download_size: number | null };
 
 const MEDIA_EXTENSIONS = ["mp4", "mov", "mkv", "webm", "m4v", "avi", "mp3", "wav", "m4a", "aac", "flac", "ogg", "opus"];
 /** Start a new paragraph after a pause this long (seconds) or a speaker change. */
@@ -106,8 +106,10 @@ function sourceToOutput(t: number): number {
 
 async function openFile() {
   const media = await open({ multiple: false, filters: [{ name: "Video or audio", extensions: MEDIA_EXTENSIONS }] });
-  if (!media) return;
+  if (media) await openMedia(media);
+}
 
+async function openMedia(media: string) {
   try {
     let p = await invoke<Project | null>("open_media", { media });
     if (!p) p = await transcribeOrImport(media);
@@ -119,8 +121,30 @@ async function openFile() {
   }
 }
 
+/** Offer to fetch the speech model. Resolves true once it's installed. */
+async function downloadModel(model: ModelStatus): Promise<boolean> {
+  const mb = (bytes: number) => Math.round(bytes / 1e6);
+  const ok = await confirm(
+    `Strikecut transcribes on your machine with a ${mb(model.download_size!)} MB speech model (whisper base.en). ` +
+      `It's downloaded once from Hugging Face and works offline after that.\n\nYou can also import a transcript made by another tool.`,
+    { title: "Download speech model", okLabel: `Download (${mb(model.download_size!)} MB)`, cancelLabel: "Import transcript…" },
+  );
+  if (!ok) return false;
+  busy("Downloading speech model…", 0);
+  const unlisten = await listen<[number, number]>("model-progress", ({ payload: [done, total] }) =>
+    busy(`Downloading speech model… ${mb(done)} / ${mb(total)} MB`, done / total),
+  );
+  try {
+    await invoke("download_model");
+    return true;
+  } finally {
+    unlisten();
+  }
+}
+
 async function transcribeOrImport(media: string): Promise<Project | null> {
   const model = await invoke<ModelStatus>("model_status");
+  if (!model.exists && model.download_size) model.exists = await downloadModel(model);
   if (model.exists) {
     busy("Transcribing on your machine… long recordings can take a few minutes.");
     try {
@@ -131,6 +155,7 @@ async function transcribeOrImport(media: string): Promise<Project | null> {
         return null;
     }
   } else if (
+    !model.download_size &&
     !(await confirm(
       `No speech model found at:\n${model.path}\n\nDownload ggml-base.en.bin from huggingface.co/ggerganov/whisper.cpp into that folder, ` +
         `or import a word-timestamped transcript (whisper.cpp, WhisperX, faster-whisper, OpenAI JSON).\n\nImport a transcript now?`,
@@ -307,6 +332,10 @@ ui.video.addEventListener("pause", () => (ui.play.textContent = "▶"));
 ui.video.addEventListener("seeked", tick);
 
 // ---------- events ----------
+
+invoke<string | null>("startup_file").then((f) => {
+  if (f) openMedia(f);
+});
 
 ui.open.onclick = openFile;
 ui.openEmpty.onclick = openFile;

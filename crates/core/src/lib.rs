@@ -11,6 +11,7 @@ pub mod edit;
 pub mod export;
 pub mod filler;
 pub mod media;
+pub mod models;
 pub mod project;
 pub mod srt;
 pub mod transcribe;

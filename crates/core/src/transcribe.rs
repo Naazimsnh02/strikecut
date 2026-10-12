@@ -12,7 +12,7 @@ use anyhow::{bail, Context, Result};
 use serde_json::Value;
 
 use crate::transcript::{Transcript, Word};
-use crate::{align, media};
+use crate::{align, media, models};
 
 #[derive(Debug, Clone)]
 pub struct TranscribeOptions {
@@ -25,23 +25,12 @@ pub struct TranscribeOptions {
 
 pub const DEFAULT_MODEL: &str = "ggml-base.en.bin";
 
-/// Where models live by default: `$STRIKECUT_MODEL`, else `<data dir>/strikecut/models/ggml-base.en.bin`.
+/// The model used when none is given: `$STRIKECUT_MODEL`, else `ggml-base.en.bin` in [`models::models_dir`].
 pub fn default_model_path() -> PathBuf {
-    if let Some(p) = std::env::var_os("STRIKECUT_MODEL") {
-        return PathBuf::from(p);
+    match std::env::var_os("STRIKECUT_MODEL") {
+        Some(p) => PathBuf::from(p),
+        None => models::DEFAULT.path(),
     }
-    let env = |k: &str| std::env::var_os(k).map(PathBuf::from);
-    let data = if cfg!(windows) {
-        env("LOCALAPPDATA")
-    } else if cfg!(target_os = "macos") {
-        env("HOME").map(|h| h.join("Library/Application Support"))
-    } else {
-        env("XDG_DATA_HOME").or_else(|| env("HOME").map(|h| h.join(".local/share")))
-    };
-    data.unwrap_or_else(|| PathBuf::from("."))
-        .join("strikecut")
-        .join("models")
-        .join(DEFAULT_MODEL)
 }
 
 pub fn transcribe(input: &Path, opts: &TranscribeOptions) -> Result<Transcript> {

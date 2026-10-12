@@ -17,4 +17,6 @@ thiserror.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
+ureq.workspace = true
+sha2.workspace = true
 whisper-rs = { workspace = true, optional = true }

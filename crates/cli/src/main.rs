@@ -9,7 +9,7 @@ use strikecut_core::filler::{mark_fillers, DEFAULT_FILLERS};
 use strikecut_core::project::PROJECT_SUFFIX;
 use strikecut_core::srt::{to_srt, CaptionOptions};
 use strikecut_core::transcribe::{align_with_media, default_model_path, import_json, transcribe, TranscribeOptions};
-use strikecut_core::{media, Project};
+use strikecut_core::{media, models, Project};
 
 /// Edit video by editing text. Delete words from the transcript and they are cut from the video.
 #[derive(Parser)]
@@ -108,13 +108,27 @@ enum Cmd {
         #[arg(long, default_value_t = 20)]
         crf: u8,
     },
+    /// List or download speech models.
+    #[command(subcommand)]
+    Model(ModelCmd),
+}
+
+#[derive(Subcommand)]
+enum ModelCmd {
+    /// Show available models and which are installed.
+    List,
+    /// Download a model [default: base.en].
+    Download {
+        #[arg(default_value = "base.en")]
+        name: String,
+    },
 }
 
 #[derive(Args)]
 struct WhisperArgs {
-    /// ggml whisper model [default: $STRIKECUT_MODEL or the app data dir]
+    /// Model name (see `strikecut model list`) or path to a ggml model file [default: base.en]
     #[arg(long)]
-    model: Option<PathBuf>,
+    model: Option<String>,
     /// Spoken language (ISO code) or `auto`.
     #[arg(long, default_value = "auto")]
     language: String,
@@ -123,12 +137,25 @@ struct WhisperArgs {
 }
 
 impl WhisperArgs {
-    fn options(&self) -> TranscribeOptions {
-        TranscribeOptions {
-            model: self.model.clone().unwrap_or_else(default_model_path),
-            language: Some(self.language.clone()),
-            threads: self.threads,
-        }
+    /// Resolve the model, downloading it first if it's a known model that isn't installed yet.
+    fn options(&self) -> Result<TranscribeOptions> {
+        let model = match &self.model {
+            Some(m) if Path::new(m).is_file() => PathBuf::from(m),
+            Some(m) => {
+                let Some(known) = models::find(m) else {
+                    bail!("no model file at {m}, and it isn't a known model name (see `strikecut model list`)");
+                };
+                ensure_model(known)?
+            }
+            None => {
+                let path = default_model_path();
+                match models::find(&path.file_name().unwrap_or_default().to_string_lossy()) {
+                    Some(known) if !path.is_file() && path == known.path() => ensure_model(known)?,
+                    _ => path,
+                }
+            }
+        };
+        Ok(TranscribeOptions { model, language: Some(self.language.clone()), threads: self.threads })
     }
 }
 
@@ -257,15 +284,46 @@ fn run(cli: Cli) -> Result<()> {
             let output = output.unwrap_or_else(|| sibling(&p.media, "edited"));
             render(&p, &output, srt, &ExportOptions { crf, ..Default::default() })
         }
+        Cmd::Model(ModelCmd::List) => {
+            for m in models::MODELS {
+                let mark = if m.is_installed() { "installed" } else { "" };
+                println!("{:<20} {:>7}  {:<48} {mark}", m.name, fmt_size(m.size), m.about);
+            }
+            eprintln!("\nModels are stored in {}", models::models_dir().display());
+            Ok(())
+        }
+        Cmd::Model(ModelCmd::Download { name }) => {
+            let m = models::find(&name)
+                .with_context(|| format!("unknown model `{name}` (see `strikecut model list`)"))?;
+            if m.is_installed() {
+                eprintln!("{} is already installed", m.name);
+            }
+            println!("{}", ensure_model(m)?.display());
+            Ok(())
+        }
     }
 }
 
 fn new_project(media_path: &Path, whisper: &WhisperArgs) -> Result<Project> {
     let info = media::probe(media_path)?;
     eprintln!("Transcribing {} ({:.0}s of media)...", media_path.display(), info.duration);
-    let t = transcribe(media_path, &whisper.options())?;
+    let t = transcribe(media_path, &whisper.options()?)?;
     eprintln!("Transcribed {} words", t.words.len());
     Ok(Project::new(absolute(media_path)?, info.duration, info.has_video, t))
+}
+
+/// Path to an installed model, downloading it (with a progress line) if needed.
+fn ensure_model(m: &models::Model) -> Result<PathBuf> {
+    if m.is_installed() {
+        return Ok(m.path());
+    }
+    eprintln!("Downloading speech model {} ({}) from {}", m.name, fmt_size(m.size), m.url());
+    let path = m.download(|done, total| {
+        eprint!("\r  {:>5.1}%  {} / {}", done as f64 / total as f64 * 100.0, fmt_size(done), fmt_size(total));
+        let _ = std::io::stderr().flush();
+    })?;
+    eprintln!("\nSaved to {}", path.display());
+    Ok(path)
 }
 
 fn render(p: &Project, output: &Path, srt: bool, opts: &ExportOptions) -> Result<()> {
@@ -318,6 +376,15 @@ fn sibling(media: &Path, tag: &str) -> PathBuf {
 
 fn absolute(p: &Path) -> Result<PathBuf> {
     std::path::absolute(p).with_context(|| format!("resolving {}", p.display()))
+}
+
+fn fmt_size(bytes: u64) -> String {
+    let mb = bytes as f64 / 1e6;
+    if mb >= 1000.0 {
+        format!("{:.1} GB", mb / 1000.0)
+    } else {
+        format!("{mb:.0} MB")
+    }
 }
 
 fn fmt_time(secs: f64) -> String {

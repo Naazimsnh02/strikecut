@@ -48,7 +48,7 @@ Already have a transcript? `strikecut import talk.mp4 words.json` accepts whispe
 
 > Strikecut is pre-release. Binaries are coming. For now, build from source.
 
-**Requirements:** [Rust](https://rustup.rs) 1.80+, [ffmpeg](https://ffmpeg.org/download.html) 6+ on your `PATH`, and a whisper model.
+**Requirements:** [Rust](https://rustup.rs) 1.80+ and [ffmpeg](https://ffmpeg.org/download.html) 6+ on your `PATH`.
 
 ```sh
 git clone https://github.com/strikecut/strikecut && cd strikecut
@@ -64,13 +64,16 @@ cd app && pnpm install && pnpm tauri build -- --features whisper
 
 On Windows: `winget install Kitware.CMake LLVM.LLVM`, then set `LIBCLANG_PATH=C:\Program Files\LLVM\bin` before building.
 
-**Speech model:** download [`ggml-base.en.bin`](https://huggingface.co/ggerganov/whisper.cpp/tree/main) (English, 142 MB) or a multilingual model, then either pass `--model path/to/model.bin` or put it at:
+**Speech model:** downloaded for you the first time you transcribe (148 MB, once; checked against its SHA-256). The app asks first; the CLI just does it. To pick a different model:
 
-| OS | Default model path |
-|---|---|
-| Windows | `%LOCALAPPDATA%\strikecut\models\ggml-base.en.bin` |
-| macOS | `~/Library/Application Support/strikecut/models/ggml-base.en.bin` |
-| Linux | `~/.local/share/strikecut/models/ggml-base.en.bin` |
+```sh
+strikecut model list                   # tiny.en ... large-v3-turbo, and which are installed
+strikecut model download small.en      # more accurate English
+strikecut transcribe talk.mp4 --model small.en
+strikecut transcribe talk.mp4 --model path/to/any-ggml-model.bin
+```
+
+Models live in `%LOCALAPPDATA%\strikecut\models` (Windows), `~/Library/Application Support/strikecut/models` (macOS), or `~/.local/share/strikecut/models` (Linux). Set `STRIKECUT_MODEL_MIRROR` to download from a mirror of [whisper.cpp's models](https://huggingface.co/ggerganov/whisper.cpp).
 
 ## How it works
 
@@ -91,7 +94,7 @@ media ──ffmpeg──▶ 16 kHz wav ──whisper.cpp (DTW)──▶ words �
 
 ## Roadmap
 
-- [ ] One-click model download in the app and CLI
+- [x] One-click model download in the app and CLI
 - [ ] Bundled ffmpeg and prebuilt binaries for Windows, macOS, and Linux
 - [ ] Studio sound (local noise removal with DeepFilterNet)
 - [ ] Speaker labels and per-speaker editing
