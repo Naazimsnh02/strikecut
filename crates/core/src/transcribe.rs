@@ -238,15 +238,14 @@ fn parse_transcript_json(v: &Value) -> Option<Transcript> {
         whisper_cpp_words(items)
     } else if let Some(words) = v.get("words").and_then(Value::as_array) {
         words.iter().filter_map(generic_word).collect()
-    } else if let Some(segments) = v.get("segments").and_then(Value::as_array) {
-        segments
+    } else {
+        v.get("segments")
+            .and_then(Value::as_array)?
             .iter()
             .filter_map(|s| s.get("words").and_then(Value::as_array))
             .flatten()
             .filter_map(generic_word)
             .collect()
-    } else {
-        return None;
     };
     Some(Transcript { language, words })
 }

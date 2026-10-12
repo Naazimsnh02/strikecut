@@ -63,7 +63,7 @@ Release builds aren't code-signed yet. On Windows, click **More info → Run any
 
 ### Build from source
 
-**Requirements:** [Rust](https://rustup.rs) 1.80+ and [ffmpeg](https://ffmpeg.org/download.html) 6+ on your `PATH`.
+**Requirements:** [Rust](https://rustup.rs) 1.88+ and [ffmpeg](https://ffmpeg.org/download.html) 6+ on your `PATH`.
 
 ```sh
 git clone https://github.com/naazimsnh02/strikecut && cd strikecut

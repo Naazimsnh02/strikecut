@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/naazimsnh02/strikecut"
-rust-version = "1.80"
+rust-version = "1.88"
 
 [workspace.dependencies]
 strikecut-core = { path = "crates/core" }
