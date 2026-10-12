@@ -13,17 +13,21 @@ pub struct MediaInfo {
     pub has_audio: bool,
 }
 
-/// Resolve a tool: `$STRIKECUT_FFMPEG`-style override, then next to our own executable (bundled builds), then `PATH`.
+/// Resolve a tool: `$STRIKECUT_FFMPEG`-style override, then next to our own executable (release builds bundle
+/// `strikecut-ffmpeg`, prefixed so it can't clash with a system ffmpeg in `/usr/bin`), then `PATH`.
 fn tool(name: &str) -> PathBuf {
     let env_key = format!("STRIKECUT_{}", name.to_uppercase());
     if let Some(p) = std::env::var_os(env_key) {
         return PathBuf::from(p);
     }
     let file = format!("{name}{}", std::env::consts::EXE_SUFFIX);
-    if let Some(sibling) =
-        std::env::current_exe().ok().and_then(|exe| exe.parent().map(|d| d.join(&file))).filter(|p| p.is_file())
-    {
-        return sibling;
+    if let Some(dir) = std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf)) {
+        for candidate in [format!("strikecut-{file}"), file.clone()] {
+            let sibling = dir.join(candidate);
+            if sibling.is_file() {
+                return sibling;
+            }
+        }
     }
     PathBuf::from(file)
 }

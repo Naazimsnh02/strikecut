@@ -2,5 +2,6 @@
 node_modules/
 app/dist/
 app/src-tauri/gen/
+app/src-tauri/binaries/
 *.strikecut.json.tmp
 .DS_Store

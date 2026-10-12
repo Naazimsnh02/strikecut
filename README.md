@@ -48,12 +48,25 @@ Already have a transcript? `strikecut import talk.mp4 words.json` accepts whispe
 
 ## Install
 
-> Strikecut is pre-release. Binaries are coming. For now, build from source.
+Download the app or the CLI for your platform from the [latest release](https://github.com/naazimsnh02/strikecut/releases/latest). Both come with ffmpeg built in, so there's nothing else to install.
+
+| Platform | App | CLI |
+|---|---|---|
+| Windows (x64) | `Strikecut_<version>_x64-setup.exe` or `.msi` | `strikecut-cli-<version>-x86_64-pc-windows-msvc.zip` |
+| macOS (Apple Silicon) | `Strikecut_<version>_aarch64.dmg` | `strikecut-cli-<version>-aarch64-apple-darwin.tar.gz` |
+| macOS (Intel) | `Strikecut_<version>_x64.dmg` | `strikecut-cli-<version>-x86_64-apple-darwin.tar.gz` |
+| Linux (x64) | `.AppImage`, `.deb`, or `.rpm` | `strikecut-cli-<version>-x86_64-unknown-linux-gnu.tar.gz` |
+
+The CLI archive holds `strikecut` plus its own `strikecut-ffmpeg` and `strikecut-ffprobe`; keep the three files together, and put the folder on your `PATH`.
+
+Release builds aren't code-signed yet. On Windows, click **More info → Run anyway** if SmartScreen warns. On macOS, right-click the app and choose **Open** the first time; for the CLI, run `xattr -dr com.apple.quarantine` on the extracted folder.
+
+### Build from source
 
 **Requirements:** [Rust](https://rustup.rs) 1.80+ and [ffmpeg](https://ffmpeg.org/download.html) 6+ on your `PATH`.
 
 ```sh
-git clone https://github.com/strikecut/strikecut && cd strikecut
+git clone https://github.com/naazimsnh02/strikecut && cd strikecut
 
 # CLI
 cargo install --path crates/cli --features whisper
@@ -65,6 +78,8 @@ cd app && pnpm install && pnpm tauri build --features whisper
 `--features whisper` embeds whisper.cpp, which needs **CMake** and **Clang** at build time. Without it, Strikecut uses a `whisper-cli` binary from [whisper.cpp releases](https://github.com/ggerganov/whisper.cpp/releases) if one is on your `PATH`.
 
 On Windows: `winget install Kitware.CMake LLVM.LLVM`, then set `LIBCLANG_PATH=C:\Program Files\LLVM\bin` before building.
+
+To bundle ffmpeg the way releases do, run `scripts/fetch-ffmpeg.sh` (it downloads a pinned, checksummed static build into `app/src-tauri/binaries`), then build with `pnpm tauri build --features whisper --config src-tauri/tauri.bundle.conf.json`. Strikecut looks for ffmpeg in `$STRIKECUT_FFMPEG`, then next to its own executable, then on `PATH`.
 
 **Speech model:** downloaded for you the first time you transcribe (148 MB, once; checked against its SHA-256). The app asks first; the CLI just does it. To pick a different model:
 
@@ -99,7 +114,7 @@ media ──ffmpeg──▶ 16 kHz wav ──whisper.cpp (DTW)──▶ words �
 ## Roadmap
 
 - [x] One-click model download in the app and CLI
-- [ ] Bundled ffmpeg and prebuilt binaries for Windows, macOS, and Linux
+- [x] Bundled ffmpeg and prebuilt binaries for Windows, macOS, and Linux
 - [ ] Studio sound (local noise removal with DeepFilterNet)
 - [ ] Speaker labels and per-speaker editing
 - [ ] MCP server so agents can edit recordings directly
@@ -113,5 +128,7 @@ Issues and PRs are welcome. Run the tests with `cargo test -p strikecut-core -p 
 ## License
 
 [MIT](LICENSE)
+
+Release builds bundle unmodified [FFmpeg](https://ffmpeg.org) binaries, which are GPL licensed and run as separate programs; see `FFMPEG-NOTICE.txt` in the CLI archive for the exact build.
 
 Demo footage: ["Becky Hogge talks about digital rights and the Open Rights Group"](https://commons.wikimedia.org/wiki/File:Becky_Hogge_talks_about_digital_rights_and_the_Open_Rights_Group.webm) by Open Rights Group, [CC BY 2.5](https://creativecommons.org/licenses/by/2.5/), via Wikimedia Commons, trimmed and edited.
