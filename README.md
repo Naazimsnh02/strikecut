@@ -77,7 +77,9 @@ Models live in `%LOCALAPPDATA%\strikecut\models` (Windows), `~/Library/Applicati
 
 ## How it works
 
-Speech models place word boundaries loosely; even whisper's DTW-aligned timestamps land 0.1 to 0.2s late, which would leave half an "um" audible after a cut. So Strikecut measures the real pauses in the audio and snaps each word boundary to them. Cuts land in silence, not mid-syllable.
+Speech models place word boundaries loosely; even whisper's DTW-aligned timestamps land 0.1 to 0.2s late, which would leave half an "um" audible after a cut. So Strikecut measures the real pauses in the audio and snaps each word boundary to them. Words spoken without a pause in between are fitted proportionally into the measured stretch of speech, and each cut moves to the quietest 10 ms nearby. Cuts land in silence, not mid-syllable.
+
+Whisper also tends to "clean up" what you said, silently dropping the very ums and uhs you want to remove. Strikecut primes it with a verbatim prompt so fillers make it into the transcript.
 
 ```
 media ──ffmpeg──▶ 16 kHz wav ──whisper.cpp (DTW)──▶ words ──snap to measured silences──▶ talk.mp4.strikecut.json

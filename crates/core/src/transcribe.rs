@@ -25,6 +25,17 @@ pub struct TranscribeOptions {
 
 pub const DEFAULT_MODEL: &str = "ggml-base.en.bin";
 
+/// Whisper is trained on cleaned-up captions, so it quietly drops "um" and "uh". Starting it off with text full of
+/// fillers makes it transcribe them verbatim, which is what filler removal needs.
+pub const VERBATIM_PROMPT: &str = "Umm, so, uh, I was like, hmm... Okay, um, here's what I, uh, mean.";
+
+/// The verbatim prompt is English, so only use it for English: an English-only model or `--language en`.
+fn verbatim_prompt(opts: &TranscribeOptions) -> Option<&'static str> {
+    let english_model = opts.model.file_name().is_some_and(|n| n.to_string_lossy().contains(".en"));
+    let english = english_model || opts.language.as_deref() == Some("en");
+    english.then_some(VERBATIM_PROMPT)
+}
+
 /// The model used when none is given: `$STRIKECUT_MODEL`, else `ggml-base.en.bin` in [`models::models_dir`].
 pub fn default_model_path() -> PathBuf {
     match std::env::var_os("STRIKECUT_MODEL") {
@@ -63,8 +74,10 @@ pub fn align_with_media(input: &Path, transcript: &mut Transcript) -> Result<()>
 
 fn align_words(transcript: &mut Transcript, samples_16k: &[i16]) {
     let opts = align::AlignOptions::default();
-    let silences = align::silences(&align::frame_db(samples_16k, 16_000), opts.min_silence);
-    align::snap_to_silences(&mut transcript.words, &silences, opts.max_shift);
+    let db = align::frame_db(samples_16k, 16_000);
+    let silences = align::silences(&db, opts.min_silence);
+    let snapped = align::snap_to_silences(&mut transcript.words, &silences, opts.max_shift);
+    align::snap_to_dips(&mut transcript.words, &snapped, &db, opts.dip_window);
 }
 
 #[cfg(feature = "whisper")]
@@ -83,6 +96,9 @@ fn backend(wav: &Path, tmp: &Path, opts: &TranscribeOptions) -> Result<Transcrip
     // One word per segment, split on word boundaries, JSON output.
     cmd.args(["-ml", "1", "-sow", "-oj", "-np", "-of"]).arg(&base);
     cmd.arg("-l").arg(opts.language.as_deref().unwrap_or("auto"));
+    if let Some(prompt) = verbatim_prompt(opts) {
+        cmd.arg("--prompt").arg(prompt);
+    }
     if let Some(t) = opts.threads {
         cmd.arg("-t").arg(t.to_string());
     }
@@ -153,8 +169,14 @@ mod embedded {
         params.set_print_timestamps(false);
         let lang = opts.language.as_deref().filter(|l| *l != "auto");
         params.set_language(Some(lang.unwrap_or("auto")));
-        if let Some(t) = opts.threads {
-            params.set_n_threads(t.into());
+        // whisper.cpp defaults to 4 threads; most machines have more cores than that.
+        let threads = opts
+            .threads
+            .map(i32::from)
+            .unwrap_or_else(|| std::thread::available_parallelism().map_or(4, |n| n.get().clamp(1, 8) as i32));
+        params.set_n_threads(threads);
+        if let Some(prompt) = verbatim_prompt(opts) {
+            params.set_initial_prompt(prompt);
         }
 
         state.full(params, &audio)?;
