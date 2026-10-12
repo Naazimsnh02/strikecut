@@ -6,7 +6,9 @@
 
 Local. Open source. No account, no subscription, nothing uploaded.
 
-<!-- TODO: hero GIF — select a sentence, press Delete, watch the video skip it -->
+<img src="docs/demo.gif" alt="Strikecut: click Remove fillers, select a sentence and press Delete, then play the video as it skips the cut words" width="960">
+
+<sub>Real, unscripted interview. One click strikes every um and uh, a sentence goes with <kbd>Delete</kbd>, and playback skips what's struck.</sub>
 
 </div>
 
@@ -57,7 +59,7 @@ git clone https://github.com/strikecut/strikecut && cd strikecut
 cargo install --path crates/cli --features whisper
 
 # Desktop app (also needs Node 20+ and pnpm)
-cd app && pnpm install && pnpm tauri build -- --features whisper
+cd app && pnpm install && pnpm tauri build --features whisper
 ```
 
 `--features whisper` embeds whisper.cpp, which needs **CMake** and **Clang** at build time. Without it, Strikecut uses a `whisper-cli` binary from [whisper.cpp releases](https://github.com/ggerganov/whisper.cpp/releases) if one is on your `PATH`.
@@ -106,8 +108,10 @@ media ──ffmpeg──▶ 16 kHz wav ──whisper.cpp (DTW)──▶ words �
 
 ## Contributing
 
-Issues and PRs are welcome. Run the tests with `cargo test --workspace`.
+Issues and PRs are welcome. Run the tests with `cargo test -p strikecut-core -p strikecut`.
 
 ## License
 
 [MIT](LICENSE)
+
+Demo footage: ["Becky Hogge talks about digital rights and the Open Rights Group"](https://commons.wikimedia.org/wiki/File:Becky_Hogge_talks_about_digital_rights_and_the_Open_Rights_Group.webm) by Open Rights Group, [CC BY 2.5](https://creativecommons.org/licenses/by/2.5/), via Wikimedia Commons, trimmed and edited.

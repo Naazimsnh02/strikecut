@@ -260,8 +260,10 @@ async function refresh(persist = true) {
   cut = await invoke<Cut>("keep_spans", { project });
   ui.length.innerHTML =
     cut.duration < project.duration - 0.05
-      ? `${fmt(project.duration)} → <b>${fmt(cut.duration)}</b> <span class="saved">−${fmt(project.duration - cut.duration)}</span>`
+      ? // Round each side first so the numbers shown add up (0:33 → 0:29 is −0:04).
+        `${fmt(project.duration)} → <b>${fmt(cut.duration)}</b> <span class="saved">−${fmt(Math.round(project.duration) - Math.round(cut.duration))}</span>`
       : fmt(project.duration);
+  tick();
 
   if (persist) {
     clearTimeout(saveTimer);
