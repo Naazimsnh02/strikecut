@@ -53,8 +53,8 @@ Download the app or the CLI for your platform from the [latest release](https://
 | Platform | App | CLI |
 |---|---|---|
 | Windows (x64) | `Strikecut_<version>_x64-setup.exe` or `.msi` | `strikecut-cli-<version>-x86_64-pc-windows-msvc.zip` |
-| macOS (Apple Silicon) | `Strikecut_<version>_aarch64.dmg` | `strikecut-cli-<version>-aarch64-apple-darwin.tar.gz` |
-| macOS (Intel) | `Strikecut_<version>_x64.dmg` | `strikecut-cli-<version>-x86_64-apple-darwin.tar.gz` |
+| macOS 11+ (Apple Silicon) | `Strikecut_<version>_aarch64.dmg` | `strikecut-cli-<version>-aarch64-apple-darwin.tar.gz` |
+| macOS 11+ (Intel) | `Strikecut_<version>_x64.dmg` | `strikecut-cli-<version>-x86_64-apple-darwin.tar.gz` |
 | Linux (x64) | `.AppImage`, `.deb`, or `.rpm` | `strikecut-cli-<version>-x86_64-unknown-linux-gnu.tar.gz` |
 
 The CLI archive holds `strikecut` plus its own `strikecut-ffmpeg` and `strikecut-ffprobe`; keep the three files together, and put the folder on your `PATH`.
